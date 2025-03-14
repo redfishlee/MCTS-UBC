@@ -39,6 +39,7 @@ def expression_transform(immaformula):
     if i.count('C') == 1:# C1单独处理
         for sp in Ts_dic.keys():
             i = i.replace(sp,Ts_dic[sp])
+            i = i.replace('(', '_').replace(')', '_')
         return i
     else:# Cn情况
         result = ''
@@ -87,6 +88,7 @@ def expression_transform(immaformula):
                         result += mid
                         i = i[current_second_carbon:]
         # print(result)
+        result = result.replace('(', '_').replace(')', '_')
         return result
  
 

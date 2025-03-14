@@ -145,7 +145,7 @@ class Generator(object):
                     pathway_found = True
                     step_number += 1
                     pathway[step_number] = Chem.MolToSmiles(current_node.mol)
-                    #print("congratulations! A reliable pathway has been found!")
+                    print("congratulations! A reliable pathway has been found!")
                     return pathway, activated_IM, total_visits, reactions
 
 
@@ -176,4 +176,5 @@ class Generator(object):
                 break
                 
         return full_pathway_copy
+
 

@@ -1,17 +1,11 @@
 from rdkit.Chem import AllChem as Chem
 from MEACRNG.CRNG.ReactionNetworkGenerator import SpeciesNode, PathwayGenerator #the most important one
-from MEACRNG.CRNG.ReactionLibrary.C1ReactionLib import C1OneReactantOneProductReactionLib
-from MEACRNG.CRNG.ReactionLibrary.C2ReactionLib import C2OneReactionOneProductReactionLib
 from MEACRNG.CRNG.ReactionLibrary.C3ReactionLib import C3OneReactionOneProductReactionLib #make the reaction
 from MEACRNG.CRNG.ValidMolCheckFuncLibrary.ValidMolCheckFuncLib import CarbonValidMolCheckFunc #don't care
 from MEACRNG.Tools.utils import ReactionLibUtils
-from MEACRNG.CRNG.ReactionLibrary.MetaReactions import OneReactantOneProductMetaReation, ReactionType, Reaction
-from MEACRNG.Tools.Smiles2formula import expression_transform #in the final part, you want to make it better looking
-from MEACRNG.Tools.redfish_functionalities import detect_reactions
-
 from MEACRNG.MolEncoder.C1MolLib import C1MolLib #to make the carbon_containing_building_blocks
-
 import json
+from MEACRNG.Tools.redfish_functionalities import detect_reactions, extract_pathway
 
 # allowed steps,for multi carbon products，use functions in MetaReation or write a new lib
 reactions = ReactionLibUtils.merge_reactions([
@@ -37,9 +31,8 @@ check_func = [
 ]
 
 #reactants and results in Smiles，
-CH3CH2CH3 = SpeciesNode(Chem.MolFromSmarts('[H]C([H])([H])C([H])([H])C([H])([H])[H]'))# 'AddHs' will fill H，eg. C+4H==CH4
+CH3CH2CH3 = SpeciesNode(Chem.MolFromSmarts('[H]C([H])([H])C([H])([H])C([H])([H])[H]'))
 CO = SpeciesNode(Chem.MolFromSmiles('CO'))
-#CH3 = SpeciesNode(Chem.MolFromSmiles('[H]C([H])[H]',sanitize=False))# sanitize=False，input smile which keeps H directly.
 
 # set reactant and product
 PG = PathwayGenerator.Generator(
@@ -66,10 +59,10 @@ carbon_containing_building_blocks = [
 all_pathways = {}
 total_visits = 0
 while True:
+    #get the main pathway
     pathways_single_iteration = []
     total_visits += 1
-    pathway_dic, activated_IM, total_visits, reactions = PG.find_a_pathway(reactions, carbon_containing_building_blocks, total_visits)
-    pathway_list = [ pathway_dic[num+1] for num in range(len(pathway_dic)) ]
+    pathway_list, activated_IM, total_visits, reactions = extract_pathway(PG, reactions, carbon_containing_building_blocks, total_visits)
     main_pathway = PG.simplify_pathway(pathway_list)
     pathways_single_iteration.append(main_pathway)
 
@@ -85,8 +78,7 @@ while True:
         product=c_building_node,
         valid_mol_check_func_list=check_func)
 
-        pathway_dic, activated_IM, total_visits, reactions = PG_c_building.find_a_pathway(reactions, carbon_containing_building_blocks, total_visits)
-        pathway_list = [ pathway_dic[num+1] for num in range(len(pathway_dic)) ]
+        pathway_list, activated_IM, total_visits, reactions = extract_pathway(PG, reactions, carbon_containing_building_blocks, total_visits)
 
         c_building_block_pathway = PG.simplify_pathway(pathway_list)
         pathways_single_iteration.append(c_building_block_pathway)
@@ -97,6 +89,7 @@ while True:
     if total_visits >= 100:
         break
 
+#get the result into json file
 with open("All_pathways.json", "w") as f:
     json.dump(all_pathways, f, indent=4)
 
